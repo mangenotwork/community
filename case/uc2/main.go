@@ -18,7 +18,7 @@ func main() {
 	// 当前进程标记字符串,便于显示
 	tag = os.Args[1]
 	srcAddr := &net.UDPAddr{IP: net.IPv4zero, Port: 9982} // 注意端口必须固定
-	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.40.85"), Port: 9981}
+	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.50.85"), Port: 9981}
 	conn, err := net.DialUDP("udp", srcAddr, dstAddr)
 	if err != nil {
 		fmt.Println(err)
@@ -60,6 +60,12 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 	if _, err = conn.Write([]byte(HAND_SHAKE_MSG)); err != nil {
 		log.Println("send handshake:", err)
 	}
+
+	go func() {
+		time.Sleep(13 * time.Second)
+		tcpc(anotherAddr)
+	}()
+
 	go func() {
 		for {
 			time.Sleep(10 * time.Second)
@@ -77,4 +83,37 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 			log.Printf("收到数据:%s\n", data[:n])
 		}
 	}
+}
+
+func tcpc(addr *net.UDPAddr) {
+	ser := addr.String()
+	log.Println(ser)
+
+	conn, err := net.Dial("tcp", ser)
+	if err != nil {
+		fmt.Println("tcp 连接失败")
+		return
+	}
+	defer conn.Close()
+
+	go func() {
+		for {
+			resp := make([]byte, 256)
+			n, err := conn.Read(resp)
+			if err != nil {
+				fmt.Println("收到tcp恢复失败: ", err)
+			}
+			fmt.Println("收到tcp回复", string(resp[:n]))
+		}
+	}()
+
+	fmt.Printf("tcp 连接成功")
+	for {
+		time.Sleep(3 * time.Second)
+		_, err = conn.Write([]byte("来自tcp消息"))
+		if err != nil {
+			fmt.Println("tcp发送失败:", err)
+		}
+	}
+
 }
