@@ -28,7 +28,7 @@ func nodeInfo() string {
 
 func main() {
 	// 监听
-	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9981})
+	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("0.0.0.0"), Port: 9981})
 	if err != nil {
 		fmt.Println(err)
 		return
