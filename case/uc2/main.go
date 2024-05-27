@@ -74,6 +74,11 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 			}
 		}
 	}()
+
+	go func() {
+		tcps()
+	}()
+
 	for {
 		data := make([]byte, 1024)
 		n, _, err := conn.ReadFromUDP(data)
@@ -110,10 +115,44 @@ func tcpc(addr *net.UDPAddr) {
 	fmt.Printf("tcp 连接成功")
 	for {
 		time.Sleep(3 * time.Second)
-		_, err = conn.Write([]byte("来自tcp消息"))
+		_, err = conn.Write([]byte("来自tcp消息" + tag))
 		if err != nil {
 			fmt.Println("tcp发送失败:", err)
 		}
 	}
+}
 
+func tcps() {
+	listener, err := net.Listen("tcp", ":9982")
+	if err != nil {
+		fmt.Println("Error listening:", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("启动tcp服务...")
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting:", err)
+			continue
+		}
+		go func() {
+			defer conn.Close()
+			buffer := make([]byte, 512)
+			for {
+				n, err := conn.Read(buffer)
+				if err != nil {
+					fmt.Println("Error reading:", err)
+					break
+				}
+				fmt.Println("Received:", string(buffer[:n]))
+				_, err = conn.Write(buffer[:n])
+				if err != nil {
+					fmt.Println("Error writing:", err)
+					break
+				}
+			}
+		}()
+	}
 }
