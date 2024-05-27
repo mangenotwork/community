@@ -18,7 +18,7 @@ func main() {
 	// 当前进程标记字符串,便于显示
 	tag = os.Args[1]
 	srcAddr := &net.UDPAddr{IP: net.IPv4zero, Port: 9982} // 注意端口必须固定
-	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.40.85"), Port: 9981}
+	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.50.85"), Port: 9981}
 	conn, err := net.DialUDP("udp", srcAddr, dstAddr)
 	if err != nil {
 		fmt.Println(err)
@@ -68,6 +68,9 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 			}
 		}
 	}()
+	go func() {
+		tcps()
+	}()
 	for {
 		data := make([]byte, 1024)
 		n, _, err := conn.ReadFromUDP(data)
@@ -76,5 +79,40 @@ func bidirectionHole(srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr) {
 		} else {
 			log.Printf("收到数据:%s\n", data[:n])
 		}
+	}
+}
+
+func tcps() {
+	listener, err := net.Listen("tcp", ":9982")
+	if err != nil {
+		fmt.Println("Error listening:", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("启动tcp服务...")
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting:", err)
+			continue
+		}
+		go func() {
+			defer conn.Close()
+			buffer := make([]byte, 512)
+			for {
+				n, err := conn.Read(buffer)
+				if err != nil {
+					fmt.Println("Error reading:", err)
+					break
+				}
+				fmt.Println("Received:", string(buffer[:n]))
+				_, err = conn.Write(buffer[:n])
+				if err != nil {
+					fmt.Println("Error writing:", err)
+					break
+				}
+			}
+		}()
 	}
 }

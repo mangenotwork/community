@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var my = "10.0.50.85:12312"
+var my = "127.0.0.1:12312"
 var srcAddr = &net.UDPAddr{IP: net.IPv4zero, Port: 12312}
 
 var nodTable = make([]string, 0)
@@ -26,7 +26,7 @@ func main() {
 
 // 在 burrow服务注册节点信息，并更新自己的节点表
 func register() {
-	sip := net.ParseIP("10.0.50.85")
+	sip := net.ParseIP("127.0.0.1")
 
 	dstAddr := &net.UDPAddr{IP: sip, Port: 9981}
 	conn, err := net.DialUDP("udp", srcAddr, dstAddr)
@@ -79,8 +79,7 @@ func broadcast() {
 				addr := strings.Split(v, ":")
 				sip := net.ParseIP(addr[0])
 				dstAddr := &net.UDPAddr{IP: sip, Port: str2int(addr[1])}
-				srcAddr1 := &net.UDPAddr{IP: net.IPv4zero, Port: 0}
-				conn, err := net.DialUDP("udp", srcAddr1, dstAddr)
+				conn, err := net.DialUDP("udp", srcAddr, dstAddr)
 				if err != nil {
 					fmt.Println(err)
 				}
