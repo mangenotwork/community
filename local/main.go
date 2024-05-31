@@ -10,8 +10,6 @@ func main() {
 
 	tag := os.Args[1]
 
-	registersvc.NodeTable.Hello()
-
 	registersvc.BurrowClient(str2int(tag))
 
 	select {}

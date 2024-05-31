@@ -34,10 +34,15 @@ func udpServer(port int) {
 		log.Printf("<%s> %s\n", remoteAddr.String(), data[:n])
 		nodeTable.Set(remoteAddr)
 
+		_, err = listener.WriteToUDP([]byte("2"+remoteAddr.String()), remoteAddr)
+		if err != nil {
+			log.Println("下发节点地址失败: ", err)
+		}
+
 		// 下发节点表
 		nodeData := nodeTable.Get(remoteAddr)
 		if len(nodeData) > 0 {
-			_, wErr := listener.WriteToUDP([]byte(nodeData), remoteAddr)
+			_, wErr := listener.WriteToUDP([]byte("0"+nodeData), remoteAddr)
 			if wErr != nil {
 				log.Println("下发节点表Err: ", wErr)
 			}

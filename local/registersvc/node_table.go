@@ -28,6 +28,7 @@ func (table *Table) Refresh(listStr string) {
 			continue
 		}
 		t := strings.Split(v, ":")
+		log.Println("解析节点: ", t)
 		port, _ := strconv.Atoi(t[1])
 		newTable = append(newTable, &Node{
 			Addr: v,
@@ -38,35 +39,73 @@ func (table *Table) Refresh(listStr string) {
 	table.List = newTable
 }
 
-func (table *Table) Hello() {
+func (table *Table) Hello(listen *net.UDPConn) {
 	go func() {
 		ticker := time.NewTicker(time.Second * 10) // 10秒执行一次
 		for {
 			select {
+
 			case <-ticker.C:
-
 				for _, v := range table.List {
-
 					anotherAddr := &net.UDPAddr{
 						IP:   net.ParseIP(v.IP),
 						Port: v.Port,
 					}
-
-					conn, err := net.DialUDP("udp", srcAddr, anotherAddr)
-					if err != nil {
-						fmt.Println(err)
-						continue
-					}
-
-					// 向另一个peer发送一条udp消息(对方peer的nat设备会丢弃该消息,非法来源),用意是在自身的nat设备打开一条可进入的通道,这样对方peer就可以发过来udp消息
-					if _, err = conn.Write([]byte(fmt.Sprintf("hello, my is %s", srcAddr.String()))); err != nil {
+					if _, err = listen.WriteTo([]byte("1hello, my is "+myAddr), anotherAddr); err != nil {
 						log.Println("send handshake:", err)
 					}
-
-					_ = conn.Close()
 				}
 
 			}
 		}
 	}()
+}
+
+func (table *Table) HelloTcp() {
+	go func() {
+		ticker := time.NewTicker(time.Second * 10) // 10秒执行一次
+		for {
+			select {
+
+			case <-ticker.C:
+				for _, v := range table.List {
+					anotherAddr := &net.UDPAddr{
+						IP:   net.ParseIP(v.IP),
+						Port: v.Port,
+					}
+					tcpc(anotherAddr)
+				}
+
+			}
+		}
+	}()
+}
+
+func tcpc(addr *net.UDPAddr) {
+	ser := addr.String()
+	log.Println(ser)
+
+	conn, err := net.Dial("tcp", ser)
+	if err != nil {
+		fmt.Println("tcp 连接失败")
+		return
+	}
+
+	fmt.Printf("tcp 连接成功")
+
+	time.Sleep(3 * time.Second)
+	_, err = conn.Write([]byte("来自tcp消息"))
+	if err != nil {
+		fmt.Println("tcp发送失败:", err)
+	}
+
+	time.Sleep(1 * time.Second)
+	resp := make([]byte, 256)
+	n, err := conn.Read(resp)
+	if err != nil {
+		fmt.Println("收到tcp恢复失败: ", err)
+	}
+	fmt.Println("收到tcp回复", string(resp[:n]))
+	conn.Close()
+
 }
