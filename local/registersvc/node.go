@@ -1,32 +1,56 @@
 package registersvc
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"syscall"
 	"time"
 )
 
 var listen *net.UDPConn
-var err error
+
 var myAddr string
+
+func reusePortControl(network, address string, c syscall.RawConn) error {
+	return c.Control(func(fd uintptr) {
+		err := syscall.SetsockoptInt(syscall.Handle(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+		if err != nil {
+			fmt.Println(err)
+		}
+	})
+}
 
 func BurrowClient(port int) {
 
-	srcAddr := &net.UDPAddr{
-		IP:   net.IPv4zero,
-		Port: port,
+	var err error
+
+	l := &net.ListenConfig{Control: reusePortControl}
+
+	// 启动tcp
+	go NodeTCP(l, port)
+
+	// 启动udp
+	lp, err := l.ListenPacket(context.Background(), "udp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		log.Println(err)
 	}
 
-	listen, err = net.ListenUDP("udp", srcAddr)
+	//srcAddr := &net.UDPAddr{
+	//	IP:   net.IPv4zero,
+	//	Port: port,
+	//}
+	//
+	//listen, err = net.ListenUDP("udp", srcAddr)
+
+	listen = lp.(*net.UDPConn)
+
 	if err != nil {
 		log.Println("启动UDP失败")
 		panic(err)
 	}
 	log.Println("启动UDP服务...")
-
-	// 启动tcp
-	go NodeTCP(port)
 
 	// burrow地址
 	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.40.29"), Port: 9981}

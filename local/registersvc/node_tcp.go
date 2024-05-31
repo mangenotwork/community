@@ -1,13 +1,18 @@
 package registersvc
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 )
 
-func NodeTCP(port int) {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func NodeTCP(l *net.ListenConfig, port int) {
+
+	listener, err := l.Listen(context.Background(), "tcp", fmt.Sprintf("0.0.0.0:%d", port))
+
+	//listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+
 	if err != nil {
 		log.Println("Error listening:", err)
 		return

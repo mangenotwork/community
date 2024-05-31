@@ -51,7 +51,7 @@ func (table *Table) Hello(listen *net.UDPConn) {
 						IP:   net.ParseIP(v.IP),
 						Port: v.Port,
 					}
-					if _, err = listen.WriteTo([]byte("1hello, my is "+myAddr), anotherAddr); err != nil {
+					if _, err := listen.WriteTo([]byte("1hello, my is "+myAddr), anotherAddr); err != nil {
 						log.Println("send handshake:", err)
 					}
 				}
