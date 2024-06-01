@@ -1,7 +1,8 @@
 package main
 
 import (
-	"burrow/node"
+	"community/internal/burrow/node"
+	"community/pkg/conf"
 	"context"
 	"fmt"
 	"log"
@@ -10,13 +11,13 @@ import (
 )
 
 var (
-	port      = 9981
 	nodeTable = node.NewTable()
 )
 
 func main() {
+	conf.InitBurrowConf()
 	nodeTable.Clear()
-	udpServer(port)
+	udpServer(conf.BurrowConf.Port)
 }
 
 func udpServer(port int) {

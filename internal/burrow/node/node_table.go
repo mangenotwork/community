@@ -1,6 +1,7 @@
 package node
 
 import (
+	"community/pkg/entity"
 	"log"
 	"net"
 	"strings"
@@ -8,12 +9,12 @@ import (
 )
 
 type Table struct {
-	List []*Info
+	List []*entity.NodeTableItem
 }
 
 func NewTable() *Table {
 	return &Table{
-		List: make([]*Info, 0),
+		List: make([]*entity.NodeTableItem, 0),
 	}
 }
 
@@ -39,7 +40,7 @@ func (table *Table) Set(addr *net.UDPAddr) {
 		}
 	}
 	if !has {
-		table.List = append(table.List, NewInfo(addr))
+		table.List = append(table.List, entity.NewNodeTableItem(addr))
 	}
 }
 

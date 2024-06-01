@@ -1,7 +1,7 @@
 package main
 
 import (
-	"local/registersvc"
+	"community/internal/local/registersvc"
 	"os"
 	"strconv"
 )
