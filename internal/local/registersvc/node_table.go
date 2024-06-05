@@ -63,6 +63,19 @@ func (table *Table) Hello(listen *net.UDPConn) {
 	}()
 }
 
+// 广播资料信息
+func (table *Table) BroadcastData(data []byte) {
+	for _, v := range table.List {
+		anotherAddr := &net.UDPAddr{
+			IP:   net.ParseIP(v.IP),
+			Port: v.Port,
+		}
+		if _, err := listen.WriteTo(udppack.NodeBroadcastData(data), anotherAddr); err != nil {
+			logger.Error("send handshake:", err)
+		}
+	}
+}
+
 func (table *Table) HelloTcp() {
 	go func() {
 		ticker := time.NewTicker(time.Second * 10) // 10秒执行一次

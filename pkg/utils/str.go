@@ -2,6 +2,8 @@ package utils
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"strings"
@@ -84,4 +86,11 @@ func stringValue(v reflect.Value, indent int, buf *bytes.Buffer) {
 		}
 		_, _ = fmt.Fprintf(buf, format, v.Interface())
 	}
+}
+
+// GetMD5Encode 获取Md5编码
+func GetMD5Encode(data string) string {
+	h := md5.New()
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil))
 }

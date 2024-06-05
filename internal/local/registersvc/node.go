@@ -1,9 +1,11 @@
 package registersvc
 
 import (
+	"community/internal/local/datasvc"
 	"community/pkg/logger"
 	"community/pkg/udppack"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"syscall"
@@ -86,6 +88,13 @@ func BurrowClient(port int) {
 				tableData := string(pack.Data)
 				logger.Info("收到节点表 = ", tableData)
 				NodeTable.Refresh(tableData)
+
+			case udppack.UDPCodeNodeBroadcastData:
+				information := string(pack.Data)
+				logger.Info("收到节点广播的数据 = ", information)
+				newInformation := &datasvc.Information{}
+				_ = json.Unmarshal(pack.Data, &newInformation)
+				datasvc.AddFromId(newInformation)
 
 			default:
 				logger.Info("收到来自节点的数据:", string(pack.Data))

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"community/internal/local/datasvc"
 	"community/internal/local/registersvc"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -10,7 +12,17 @@ func main() {
 
 	tag := os.Args[1]
 
-	registersvc.BurrowClient(str2int(tag))
+	go registersvc.BurrowClient(str2int(tag))
+
+	go func() {
+		for {
+			name := ""
+			fmt.Scan(&name)
+			b, _ := datasvc.Add(name, name, []byte(name))
+			registersvc.NodeTable.BroadcastData(b)
+		}
+
+	}()
 
 	select {}
 }
