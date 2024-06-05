@@ -1,9 +1,10 @@
 package registersvc
 
 import (
+	"community/pkg/logger"
+	"community/pkg/udppack"
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"syscall"
 	"time"
@@ -34,7 +35,7 @@ func BurrowClient(port int) {
 	// 启动udp
 	lp, err := l.ListenPacket(context.Background(), "udp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 	}
 
 	//srcAddr := &net.UDPAddr{
@@ -47,10 +48,10 @@ func BurrowClient(port int) {
 	listen = lp.(*net.UDPConn)
 
 	if err != nil {
-		log.Println("启动UDP失败")
+		logger.Error("启动UDP失败")
 		panic(err)
 	}
-	log.Println("启动UDP服务...")
+	logger.Info("启动UDP服务...")
 
 	// burrow地址
 	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.40.29"), Port: 9981}
@@ -64,33 +65,56 @@ func BurrowClient(port int) {
 			data := make([]byte, 1024)
 			n, _, err := listen.ReadFromUDP(data)
 			if err != nil {
-				fmt.Printf("error during read: %s", err)
+				logger.ErrorF("error during read: %s", err.Error())
 			}
 
-			dataStr := string(data[:n])
-			if len(dataStr) < 1 {
+			pack, err := udppack.PacketDecrypt(data[:n], n)
+			if err != nil {
+				logger.Error(err)
 				continue
 			}
-			switch string(dataStr[0]) {
-			case "0":
-				nodeTableData := dataStr[1:len(dataStr)]
-				log.Println("收到节点表:", nodeTableData)
-				NodeTable.Refresh(nodeTableData)
-			case "2":
-				myAddr = dataStr[1:len(dataStr)]
+
+			switch pack.Code {
+
+			case udppack.UDPCodeNodeAddr:
+				myAddr = string(pack.Data)
+				logger.Info("myAddr = ", myAddr)
+				// 发送节点表请求
+				_, err = listen.WriteTo(udppack.GetNodeTable(0), dstAddr)
+
+			case udppack.UDPCodeNodeTable:
+				tableData := string(pack.Data)
+				logger.Info("收到节点表 = ", tableData)
+				NodeTable.Refresh(tableData)
+
 			default:
-				msg := dataStr[1:len(dataStr)]
-				log.Println("收到来自节点的数据:", msg)
+				logger.Info("收到来自节点的数据:", string(pack.Data))
 			}
+
+			//dataStr := string(data[:n])
+			//if len(dataStr) < 1 {
+			//	continue
+			//}
+			//
+			//switch string(dataStr[0]) {
+			//case "0":
+			//	nodeTableData := dataStr[1:len(dataStr)]
+			//	log.Println("收到节点表:", nodeTableData)
+			//	NodeTable.Refresh(nodeTableData)
+			//case "2":
+			//	myAddr = dataStr[1:len(dataStr)]
+			//default:
+			//	msg := dataStr[1:len(dataStr)]
+			//	log.Println("收到来自节点的数据:", msg)
+			//}
 
 		}
 	}()
 
 	for {
-		log.Println("发生心跳包保活...")
-		_, err = listen.WriteTo([]byte("心跳"), dstAddr)
+		_, err = listen.WriteTo(udppack.Heartbeat(), dstAddr)
 		if err != nil {
-			log.Println("发生心跳包失败")
+			logger.Error("发生心跳包失败")
 		}
 		time.Sleep(5 * time.Second) // 5秒发一次心跳包
 	}

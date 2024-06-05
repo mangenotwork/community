@@ -1,6 +1,8 @@
 package registersvc
 
 import (
+	"community/pkg/logger"
+	"community/pkg/udppack"
 	"fmt"
 	"log"
 	"net"
@@ -51,8 +53,8 @@ func (table *Table) Hello(listen *net.UDPConn) {
 						IP:   net.ParseIP(v.IP),
 						Port: v.Port,
 					}
-					if _, err := listen.WriteTo([]byte("1hello, my is "+myAddr), anotherAddr); err != nil {
-						log.Println("send handshake:", err)
+					if _, err := listen.WriteTo(udppack.NodeData("hello, my is "+myAddr), anotherAddr); err != nil {
+						logger.Error("send handshake:", err)
 					}
 				}
 
