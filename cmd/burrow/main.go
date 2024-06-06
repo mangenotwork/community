@@ -3,12 +3,12 @@ package main
 import (
 	"community/internal/burrow/node"
 	"community/pkg/conf"
+	"community/pkg/handleType"
 	"community/pkg/logger"
 	"community/pkg/udppack"
 	"context"
 	"fmt"
 	"net"
-	"syscall"
 )
 
 var (
@@ -22,7 +22,7 @@ func main() {
 }
 
 func udpServer(port int) {
-	l := &net.ListenConfig{Control: reusePortControl}
+	l := &net.ListenConfig{Control: handleType.ReusePortControl}
 	lp, err := l.ListenPacket(context.Background(), "udp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		logger.Error(err)
@@ -120,31 +120,6 @@ func udpServer(port int) {
 		//}
 
 	}
-}
-
-func reusePortControl(network, address string, c syscall.RawConn) error {
-
-	err := c.Control(func(fd uintptr) {
-
-		// 使用io复用，必须要设置监听socket为SO_REUSEADDR和SO_REUSEPORT
-
-		// 这里是设置地址复用
-		err := syscall.SetsockoptInt(syscall.Handle(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		////这里是设置接收缓冲区大小为10M
-		//err = syscall.SetsockoptInt(syscall.Handle(fd), syscall.SOL_SOCKET, syscall.SO_RCVBUF, 10*1024*1024)
-		//if err != nil {
-		//	fmt.Println(err)
-		//}
-
-	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func handleConnection(conn net.Conn) {

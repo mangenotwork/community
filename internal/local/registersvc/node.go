@@ -56,7 +56,8 @@ func BurrowClient(port int) {
 	logger.Info("启动UDP服务...")
 
 	// burrow地址
-	dstAddr := &net.UDPAddr{IP: net.ParseIP("10.0.40.29"), Port: 9981}
+	burrow := "110.41.4.212" // "10.0.40.29"
+	dstAddr := &net.UDPAddr{IP: net.ParseIP(burrow), Port: 9981}
 
 	NodeTable.Hello(listen)
 	NodeTable.HelloTcp()
@@ -121,6 +122,7 @@ func BurrowClient(port int) {
 	}()
 
 	for {
+		logger.Info("发送心跳包")
 		_, err = listen.WriteTo(udppack.Heartbeat(), dstAddr)
 		if err != nil {
 			logger.Error("发生心跳包失败")
